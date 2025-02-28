@@ -3,7 +3,7 @@ package game
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/mandelbrot/internal"
+	"github.com/USA-RedDragon/mandelbrot/internal/mandelbrot"
 	"github.com/USA-RedDragon/mandelbrot/internal/ui"
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
@@ -12,7 +12,7 @@ import (
 )
 
 type Game struct {
-	Mandelbrot *internal.Mandelbrot
+	Mandelbrot *mandelbrot.Mandelbrot
 	Width      int
 	Height     int
 	UI         *ebitenui.UI
@@ -39,7 +39,7 @@ func NewGame(width, height int) (*Game, error) {
 	root.AddChild(toolbar.Container)
 
 	return &Game{
-		Mandelbrot: internal.NewMandelbrot(width, height),
+		Mandelbrot: mandelbrot.NewMandelbrot(width, height),
 		Width:      width,
 		Height:     height,
 		UI:         eui,

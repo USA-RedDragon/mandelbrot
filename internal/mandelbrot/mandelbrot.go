@@ -12,6 +12,7 @@ type Mandelbrot struct {
 	needsUpdate   bool
 	scale         float64
 	center        complex128
+	exponent      complex128
 }
 
 type MandelbrotPixel struct {
@@ -36,7 +37,20 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 		needsUpdate:   true,
 		scale:         1,
 		center:        complex(0, 0),
+		exponent:      complex(2, 0),
 	}
+}
+
+func (m *Mandelbrot) GetExponent() complex128 {
+	return m.exponent
+}
+
+func (m *Mandelbrot) SetExponent(exponent complex128) {
+	if m.exponent == exponent {
+		return
+	}
+	m.exponent = exponent
+	m.needsUpdate = true
 }
 
 func (m *Mandelbrot) ScaleBy(factor float64) {
@@ -125,7 +139,7 @@ func (m *Mandelbrot) Update() {
 			go func(x, y int) {
 				defer pixelWG.Done()
 				c := m.ScreenToViewport(x, y)
-				pixelChan <- m.mandelbrot(x, y, 0, 2, c)
+				pixelChan <- m.mandelbrot(x, y, 0, m.exponent, c)
 			}(x, y)
 		}
 	}

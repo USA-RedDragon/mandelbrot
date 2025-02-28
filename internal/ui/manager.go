@@ -4,4 +4,5 @@ package ui
 type Manager interface {
 	Exit()
 	Reset()
+	SetExponent(exponent float64)
 }

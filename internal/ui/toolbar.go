@@ -3,6 +3,7 @@ package ui
 import (
 	goimage "image"
 	"image/color"
+	"strconv"
 
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/image"
@@ -53,6 +54,21 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	)
 	root.AddChild(explorer)
 
+	exponent := newToolbarButton(res, "Exponent")
+	var (
+		exponentInput = newToolbarNumberEntry(res, func(args *widget.TextInputChangedEventArgs) {
+			if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+				manager.SetExponent(f)
+			}
+		})
+	)
+	exponent.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			openToolbarMenu(args.Button.GetWidget(), ui, exponentInput)
+		}),
+	)
+	root.AddChild(exponent)
+
 	toolbar := &Toolbar{
 		container:    root,
 		explorerMenu: explorer,
@@ -83,6 +99,30 @@ func newToolbarButton(res *resources, label string) *widget.Button {
 	)
 }
 
+func newToolbarNumberEntry(res *resources, handler widget.TextInputChangedHandlerFunc) *widget.TextInput {
+	face, _ := loadFont(20)
+	return widget.NewTextInput(
+		widget.TextInputOpts.WidgetOpts(),
+		widget.TextInputOpts.CaretOpts(
+			widget.CaretOpts.Size(face, 2),
+		),
+		widget.TextInputOpts.Color(&widget.TextInputColor{
+			Idle:          color.NRGBA{254, 255, 255, 255},
+			Disabled:      color.NRGBA{R: 200, G: 200, B: 200, A: 255},
+			Caret:         color.NRGBA{254, 255, 255, 255},
+			DisabledCaret: color.NRGBA{R: 200, G: 200, B: 200, A: 255},
+		}),
+		widget.TextInputOpts.Face(face),
+		widget.TextInputOpts.Validation(func(newInputText string) (bool, *string) {
+			if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+				return false, nil
+			}
+			return true, &newInputText
+		}),
+		widget.TextInputOpts.SubmitHandler(handler),
+	)
+}
+
 func newToolbarMenuEntry(res *resources, label string) *widget.Button {
 	return widget.NewButton(
 		widget.ButtonOpts.Image(&widget.ButtonImage{
@@ -106,7 +146,7 @@ func newToolbarMenuEntry(res *resources, label string) *widget.Button {
 	)
 }
 
-func openToolbarMenu(opener *widget.Widget, ui *ebitenui.UI, entries ...*widget.Button) {
+func openToolbarMenu(opener *widget.Widget, ui *ebitenui.UI, entries ...widget.PreferredSizeLocateableWidget) {
 	c := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.RGBA{R: 0, G: 0, B: 0, A: 125})),
 
@@ -131,7 +171,7 @@ func openToolbarMenu(opener *widget.Widget, ui *ebitenui.UI, entries ...*widget.
 		widget.WindowOpts.Modal(),
 		widget.WindowOpts.Contents(c),
 
-		widget.WindowOpts.CloseMode(widget.CLICK),
+		widget.WindowOpts.CloseMode(widget.CLICK_OUT),
 
 		widget.WindowOpts.Location(
 			goimage.Rect(

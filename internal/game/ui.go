@@ -18,4 +18,9 @@ func (m *UIManager) Exit() {
 func (m *UIManager) Reset() {
 	m.game.mandelbrot.Center(complex(0, 0))
 	m.game.mandelbrot.Scale(1)
+	m.game.mandelbrot.SetExponent(complex(2, 0))
+}
+
+func (m *UIManager) SetExponent(exponent float64) {
+	m.game.mandelbrot.SetExponent(complex(exponent, 0))
 }

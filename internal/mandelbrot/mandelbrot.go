@@ -39,7 +39,7 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 	}
 }
 
-func (m *Mandelbrot) Scale(factor float64) {
+func (m *Mandelbrot) ScaleBy(factor float64) {
 	newscale := m.scale * factor
 	if newscale > 1 {
 		newscale = 1
@@ -48,6 +48,14 @@ func (m *Mandelbrot) Scale(factor float64) {
 		return
 	}
 	m.scale = newscale
+	m.needsUpdate = true
+}
+
+func (m *Mandelbrot) Scale(scale float64) {
+	if scale == m.scale {
+		return
+	}
+	m.scale = scale
 	m.needsUpdate = true
 }
 

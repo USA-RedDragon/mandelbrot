@@ -11,9 +11,9 @@ import (
 )
 
 type Toolbar struct {
-	container  *widget.Container
-	fileMenu   *widget.Button
-	quitButton *widget.Button
+	container    *widget.Container
+	explorerMenu *widget.Button
+	quitButton   *widget.Button
 }
 
 func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
@@ -31,27 +31,32 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 		),
 	)
 
-	file := newToolbarButton(res, "File")
+	explorer := newToolbarButton(res, "Explorer")
 	var (
-		quit = newToolbarMenuEntry(res, "Quit")
+		reset = newToolbarMenuEntry(res, "Reset")
+		quit  = newToolbarMenuEntry(res, "Quit")
 	)
-	file.Configure(
+	explorer.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			openToolbarMenu(args.Button.GetWidget(), ui, quit)
+			openToolbarMenu(args.Button.GetWidget(), ui, reset, quit)
 		}),
 	)
-	root.AddChild(file)
-
 	quit.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			manager.Exit()
 		}),
 	)
+	reset.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			manager.Reset()
+		}),
+	)
+	root.AddChild(explorer)
 
 	toolbar := &Toolbar{
-		container:  root,
-		fileMenu:   file,
-		quitButton: quit,
+		container:    root,
+		explorerMenu: explorer,
+		quitButton:   quit,
 	}
 	ui.Container.AddChild(toolbar.container)
 }

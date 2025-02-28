@@ -14,3 +14,8 @@ func NewUIManager(game *Game) *UIManager {
 func (m *UIManager) Exit() {
 	m.game.exit = true
 }
+
+func (m *UIManager) Reset() {
+	m.game.mandelbrot.Center(complex(0, 0))
+	m.game.mandelbrot.Scale(1)
+}

@@ -60,7 +60,7 @@ func (g *Game) Update() error {
 		x, y := ebiten.CursorPosition()
 
 		desiredCursorPoint := g.mandelbrot.ScreenToViewport(x, y)
-		g.mandelbrot.Scale(1 + -wheelY*0.1)
+		g.mandelbrot.ScaleBy(1 + -wheelY*0.1)
 		cursorPointAfterScale := g.mandelbrot.ScreenToViewport(x, y)
 
 		// Recenter based on the difference between the desired point and the cursor point

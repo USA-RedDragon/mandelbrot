@@ -99,23 +99,20 @@ func (m *Mandelbrot) Update() {
 	go func() {
 		defer fbWG.Done()
 		count := 0
-		for {
-			select {
-			case pixel := <-pixelChan:
-				i := (pixel.Y*m.width + pixel.X) * 4
-				copy(m.Framebuffer[i:i+4], pixel.Color[:])
-				count++
-				if count == m.width*m.height {
-					close(pixelChan)
-					return
-				}
+		for pixel := range pixelChan {
+			i := (pixel.Y*m.width + pixel.X) * 4
+			copy(m.Framebuffer[i:i+4], pixel.Color[:])
+			count++
+			if count == m.width*m.height {
+				close(pixelChan)
+				return
 			}
 		}
 	}()
 
 	pixelWG := sync.WaitGroup{}
-	for y := 0; y < m.height; y++ {
-		for x := 0; x < m.width; x++ {
+	for y := range m.height {
+		for x := range m.width {
 			pixelWG.Add(1)
 			go func(x, y int) {
 				defer pixelWG.Done()

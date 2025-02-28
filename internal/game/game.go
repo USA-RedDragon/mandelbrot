@@ -12,10 +12,11 @@ import (
 )
 
 type Game struct {
-	Mandelbrot *mandelbrot.Mandelbrot
-	Width      uint
-	Height     uint
-	UI         *ebitenui.UI
+	mandelbrot *mandelbrot.Mandelbrot
+	width      uint
+	height     uint
+	ui         *ebitenui.UI
+	exit       bool
 }
 
 func NewGame(width, height uint) (*Game, error) {
@@ -35,43 +36,50 @@ func NewGame(width, height uint) (*Game, error) {
 		return nil, fmt.Errorf("error loading resources: %w", err)
 	}
 
-	toolbar := ui.NewToolbar(eui, res)
-	root.AddChild(toolbar.Container)
+	game := &Game{
+		mandelbrot: mandelbrot.NewMandelbrot(int(width), int(height)),
+		width:      width,
+		height:     height,
+		ui:         eui,
+		exit:       false,
+	}
 
-	return &Game{
-		Mandelbrot: mandelbrot.NewMandelbrot(int(width), int(height)),
-		Width:      width,
-		Height:     height,
-		UI:         eui,
-	}, nil
+	manager := NewUIManager(game)
+	ui.CreateToolbar(manager, eui, res)
+
+	return game, nil
 }
 
 func (g *Game) Update() error {
-	g.UI.Update()
+	if g.exit {
+		return ebiten.Termination
+	}
+
+	g.ui.Update()
 	_, wheelY := ebiten.Wheel()
 	if wheelY != 0 {
 		x, y := ebiten.CursorPosition()
 
-		desiredCursorPoint := g.Mandelbrot.ScreenToViewport(x, y)
-		g.Mandelbrot.Scale(1 + -wheelY*0.1)
-		cursorPointAfterScale := g.Mandelbrot.ScreenToViewport(x, y)
+		desiredCursorPoint := g.mandelbrot.ScreenToViewport(x, y)
+		g.mandelbrot.Scale(1 + -wheelY*0.1)
+		cursorPointAfterScale := g.mandelbrot.ScreenToViewport(x, y)
 
 		// Recenter based on the difference between the desired point and the cursor point
-		g.Mandelbrot.Center(g.Mandelbrot.GetCenter() + (desiredCursorPoint - cursorPointAfterScale))
+		g.mandelbrot.Center(g.mandelbrot.GetCenter() + (desiredCursorPoint - cursorPointAfterScale))
 	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.Mandelbrot.Update()
-	screen.WritePixels(g.Mandelbrot.Framebuffer)
-	g.UI.Draw(screen)
+	g.mandelbrot.Update()
+	screen.WritePixels(g.mandelbrot.Framebuffer)
+	g.ui.Draw(screen)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\nTPS: %.2f\nFPS: %.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	g.Mandelbrot.Relayout(outsideWidth, outsideHeight)
+	g.mandelbrot.Relayout(outsideWidth, outsideHeight)
 
 	return outsideWidth, outsideHeight
 }

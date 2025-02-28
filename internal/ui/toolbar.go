@@ -11,12 +11,12 @@ import (
 )
 
 type Toolbar struct {
-	Container  *widget.Container
+	container  *widget.Container
 	fileMenu   *widget.Button
 	quitButton *widget.Button
 }
 
-func NewToolbar(ui *ebitenui.UI, res *resources) *Toolbar {
+func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	root := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.Black)),
 
@@ -42,11 +42,18 @@ func NewToolbar(ui *ebitenui.UI, res *resources) *Toolbar {
 	)
 	root.AddChild(file)
 
-	return &Toolbar{
-		Container:  root,
+	quit.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			manager.Exit()
+		}),
+	)
+
+	toolbar := &Toolbar{
+		container:  root,
 		fileMenu:   file,
 		quitButton: quit,
 	}
+	ui.Container.AddChild(toolbar.container)
 }
 
 func newToolbarButton(res *resources, label string) *widget.Button {

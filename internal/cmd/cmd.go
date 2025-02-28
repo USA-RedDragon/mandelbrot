@@ -50,7 +50,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
 
-	game, err := game.NewGame(720, 480)
+	game, err := game.NewGame(cfg.Width, cfg.Height)
 	if err != nil {
 		return fmt.Errorf("failed to create game: %w", err)
 	}

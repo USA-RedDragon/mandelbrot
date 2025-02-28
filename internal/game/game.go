@@ -13,13 +13,13 @@ import (
 
 type Game struct {
 	Mandelbrot *mandelbrot.Mandelbrot
-	Width      int
-	Height     int
+	Width      uint
+	Height     uint
 	UI         *ebitenui.UI
 }
 
-func NewGame(width, height int) (*Game, error) {
-	ebiten.SetWindowSize(width, height)
+func NewGame(width, height uint) (*Game, error) {
+	ebiten.SetWindowSize(int(width), int(height))
 	ebiten.SetWindowTitle("Fractal Explorer")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
@@ -39,7 +39,7 @@ func NewGame(width, height int) (*Game, error) {
 	root.AddChild(toolbar.Container)
 
 	return &Game{
-		Mandelbrot: mandelbrot.NewMandelbrot(width, height),
+		Mandelbrot: mandelbrot.NewMandelbrot(int(width), int(height)),
 		Width:      width,
 		Height:     height,
 		UI:         eui,

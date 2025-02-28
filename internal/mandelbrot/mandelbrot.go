@@ -8,7 +8,7 @@ import (
 type Mandelbrot struct {
 	width, height int
 	framebuffer   []byte
-	maxIterations int64
+	maxIterations uint64
 	needsUpdate   bool
 	scale         float64
 	center        complex128
@@ -63,12 +63,21 @@ func (m *Mandelbrot) GetStartingC() complex128 {
 	return m.startingC
 }
 
+func (m *Mandelbrot) SetMaxIterations(max uint64) {
+	if m.maxIterations == max {
+		return
+	}
+	m.maxIterations = max
+	m.needsUpdate = true
+}
+
 func (m *Mandelbrot) Reset() {
 	m.scale = 1
 	m.center = complex(0, 0)
 	m.exponent = complex(2, 0)
 	m.startingZ = complex(0, 0)
 	m.startingC = complex(-0.63, 0.34)
+	m.maxIterations = 1000
 	m.julia = false
 	m.needsUpdate = true
 }
@@ -215,7 +224,7 @@ func (m *Mandelbrot) Update() {
 func (m *Mandelbrot) mandelbrot(x, y int, z complex128, exponent complex128, c complex128) MandelbrotPixel {
 	pixel := [4]byte{0, 0, 0, 255}
 	brot := MandelbrotPixel{X: x, Y: y, Color: pixel}
-	n := int64(0)
+	n := uint64(0)
 
 	for n < m.maxIterations && cmplx.Abs(z) < 2 {
 		z = cmplx.Pow(z, exponent) + c

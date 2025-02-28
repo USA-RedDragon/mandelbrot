@@ -50,3 +50,7 @@ func (m *UIManager) IsJulia() bool {
 func (m *UIManager) SetJulia(julia bool) {
 	m.game.mandelbrot.SetJulia(julia)
 }
+
+func (m *UIManager) SetMaxIterations(iterations uint64) {
+	m.game.mandelbrot.SetMaxIterations(iterations)
+}

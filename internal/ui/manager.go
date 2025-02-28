@@ -12,4 +12,5 @@ type Manager interface {
 	SetStartingCImag(z float64)
 	IsJulia() bool
 	SetJulia(julia bool)
+	SetMaxIterations(iterations uint64)
 }

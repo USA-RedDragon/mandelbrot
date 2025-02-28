@@ -68,6 +68,28 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 		}),
 	)
 
+	iterations := newToolbarButton(res, "Iterations")
+	var (
+		iterationsInput = newToolbarNumberEntry(res,
+			"Iters",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseUint(newInputText, 10, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if iters, err := strconv.ParseUint(args.TextInput.GetText(), 10, 64); err == nil {
+					manager.SetMaxIterations(iters)
+				}
+			})
+	)
+	iterations.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			openToolbarMenu(args.Button.GetWidget(), ui, iterationsInput)
+		}),
+	)
+
 	z := newToolbarButton(res, "Z")
 	var (
 		zReal = newToolbarNumberEntry(res,
@@ -178,6 +200,7 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	)
 
 	root.AddChild(explorer)
+	root.AddChild(iterations)
 	root.AddChild(exponent)
 	root.AddChild(z)
 	root.AddChild(c)

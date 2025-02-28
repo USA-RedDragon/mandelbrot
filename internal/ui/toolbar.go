@@ -8,6 +8,7 @@ import (
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/colornames"
 )
 
@@ -31,28 +32,6 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{StretchHorizontal: true}),
 		),
 	)
-
-	explorer := newToolbarButton(res, "Explorer")
-	var (
-		reset = newToolbarMenuEntry(res, "Reset")
-		quit  = newToolbarMenuEntry(res, "Quit")
-	)
-	explorer.Configure(
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			openToolbarMenu(args.Button.GetWidget(), ui, reset, quit)
-		}),
-	)
-	quit.Configure(
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			manager.Exit()
-		}),
-	)
-	reset.Configure(
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			manager.Reset()
-		}),
-	)
-	root.AddChild(explorer)
 
 	exponent := newToolbarButton(res, "Exponent")
 	var (
@@ -88,7 +67,6 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			openToolbarMenu(args.Button.GetWidget(), ui, exponentReal, exponentImag)
 		}),
 	)
-	root.AddChild(exponent)
 
 	z := newToolbarButton(res, "Z")
 	var (
@@ -124,7 +102,6 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			openToolbarMenu(args.Button.GetWidget(), ui, zReal, zImag)
 		}),
 	)
-	root.AddChild(z)
 
 	c := newToolbarButton(res, "c")
 	var (
@@ -160,6 +137,49 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			openToolbarMenu(args.Button.GetWidget(), ui, cReal, cImag)
 		}),
 	)
+
+	explorer := newToolbarButton(res, "Explorer")
+	var (
+		julia = newToolbarMenuEntryCheckbox(res,
+			"Julia",
+			func(args *widget.CheckboxChangedEventArgs) {
+				if args.State == widget.WidgetChecked {
+					manager.SetJulia(true)
+					z.GetWidget().Disabled = true
+					c.GetWidget().Disabled = false
+				} else {
+					manager.SetJulia(false)
+					z.GetWidget().Disabled = false
+					c.GetWidget().Disabled = true
+				}
+			})
+		reset = newToolbarMenuEntry(res, "Reset")
+		quit  = newToolbarMenuEntry(res, "Quit")
+	)
+	if manager.IsJulia() {
+		z.GetWidget().Disabled = true
+	} else {
+		c.GetWidget().Disabled = true
+	}
+	explorer.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			openToolbarMenu(args.Button.GetWidget(), ui, julia, reset, quit)
+		}),
+	)
+	quit.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			manager.Exit()
+		}),
+	)
+	reset.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			manager.Reset()
+		}),
+	)
+
+	root.AddChild(explorer)
+	root.AddChild(exponent)
+	root.AddChild(z)
 	root.AddChild(c)
 
 	toolbar := &Toolbar{
@@ -168,6 +188,48 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 		quitButton:   quit,
 	}
 	ui.Container.AddChild(toolbar.container)
+}
+
+func newToolbarMenuEntryCheckbox(res *resources, label string, handler widget.CheckboxChangedHandlerFunc) *widget.LabeledCheckbox {
+	uncheckedImage := ebiten.NewImage(15, 15)
+	uncheckedImage.Fill(color.White)
+
+	checkedImage := ebiten.NewImage(15, 15)
+	checkedImage.Fill(color.NRGBA{255, 255, 0, 255})
+
+	buttonImage, _ := loadButtonImage()
+
+	return widget.NewLabeledCheckbox(
+		widget.LabeledCheckboxOpts.CheckboxOpts(
+			widget.CheckboxOpts.ButtonOpts(
+				widget.ButtonOpts.WidgetOpts(
+					widget.WidgetOpts.MinSize(15, 15),
+				),
+				widget.ButtonOpts.Image(buttonImage),
+				widget.ButtonOpts.DisableDefaultKeys(),
+				widget.ButtonOpts.TextPadding(widget.Insets{
+					Top:    4,
+					Left:   4,
+					Right:  32,
+					Bottom: 4,
+				}),
+			),
+			widget.CheckboxOpts.Image(&widget.CheckboxGraphicImage{
+				Unchecked: &widget.ButtonImageImage{
+					Idle: uncheckedImage,
+				},
+				Checked: &widget.ButtonImageImage{
+					Idle: checkedImage,
+				},
+			}),
+			widget.CheckboxOpts.StateChangedHandler(handler),
+		),
+		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.font, &widget.LabelColor{
+			Idle:     color.White,
+			Disabled: color.White,
+		})),
+		widget.LabeledCheckboxOpts.Spacing(6),
+	)
 }
 
 func newToolbarButton(res *resources, label string) *widget.Button {

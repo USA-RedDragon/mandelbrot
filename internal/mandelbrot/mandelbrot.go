@@ -14,6 +14,8 @@ type Mandelbrot struct {
 	center        complex128
 	exponent      complex128
 	startingZ     complex128
+	startingC     complex128
+	julia         bool
 }
 
 type MandelbrotPixel struct {
@@ -40,6 +42,8 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 		center:        complex(0, 0),
 		exponent:      complex(2, 0),
 		startingZ:     complex(0, 0),
+		startingC:     complex(-0.63, 0.34),
+		julia:         false,
 	}
 }
 
@@ -53,6 +57,28 @@ func (m *Mandelbrot) GetExponent() complex128 {
 
 func (m *Mandelbrot) GetStartingZ() complex128 {
 	return m.startingZ
+}
+
+func (m *Mandelbrot) GetStartingC() complex128 {
+	return m.startingC
+}
+
+func (m *Mandelbrot) Reset() {
+	m.scale = 1
+	m.center = complex(0, 0)
+	m.exponent = complex(2, 0)
+	m.startingZ = complex(0, 0)
+	m.startingC = complex(-0.63, 0.34)
+	m.julia = false
+	m.needsUpdate = true
+}
+
+func (m *Mandelbrot) SetStartingC(startingC complex128) {
+	if m.startingC == startingC {
+		return
+	}
+	m.startingC = startingC
+	m.needsUpdate = true
 }
 
 func (m *Mandelbrot) SetStartingZ(startingZ complex128) {
@@ -93,6 +119,18 @@ func (m *Mandelbrot) Scale(scale float64) {
 
 func (m *Mandelbrot) GetCenter() complex128 {
 	return m.center
+}
+
+func (m *Mandelbrot) SetJulia(julia bool) {
+	if m.julia == julia {
+		return
+	}
+	m.julia = julia
+	m.needsUpdate = true
+}
+
+func (m *Mandelbrot) IsJulia() bool {
+	return m.julia
 }
 
 func (m *Mandelbrot) viewport() [4]float64 {
@@ -156,8 +194,17 @@ func (m *Mandelbrot) Update() {
 			pixelWG.Add(1)
 			go func(x, y int) {
 				defer pixelWG.Done()
-				c := m.ScreenToViewport(x, y)
-				pixelChan <- m.mandelbrot(x, y, m.startingZ, m.exponent, c)
+				var z complex128
+				var c complex128
+				if m.julia {
+					z = m.ScreenToViewport(x, y)
+					c = m.startingC
+				} else {
+					z = m.startingZ
+					c = m.ScreenToViewport(x, y)
+				}
+
+				pixelChan <- m.mandelbrot(x, y, z, m.exponent, c)
 			}(x, y)
 		}
 	}

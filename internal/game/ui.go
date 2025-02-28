@@ -16,21 +16,37 @@ func (m *UIManager) Exit() {
 }
 
 func (m *UIManager) Reset() {
-	m.game.mandelbrot.Center(complex(0, 0))
-	m.game.mandelbrot.Scale(1)
-	m.game.mandelbrot.SetExponent(complex(2, 0))
+	m.game.mandelbrot.Reset()
 }
 
-func (m *UIManager) SetExponent(exponent float64) {
+func (m *UIManager) SetExponentReal(exponent float64) {
 	m.game.mandelbrot.SetExponent(complex(exponent, 0))
 }
 
+func (m *UIManager) SetExponentImag(exponent float64) {
+	m.game.mandelbrot.SetExponent(complex(real(m.game.mandelbrot.GetExponent()), exponent))
+}
+
 func (m *UIManager) SetStartingZReal(z float64) {
-	startingZ := m.game.mandelbrot.GetStartingZ()
-	m.game.mandelbrot.SetStartingZ(complex(z, imag(startingZ)))
+	m.game.mandelbrot.SetStartingZ(complex(z, imag(m.game.mandelbrot.GetStartingZ())))
 }
 
 func (m *UIManager) SetStartingZImag(z float64) {
-	startingZ := m.game.mandelbrot.GetStartingZ()
-	m.game.mandelbrot.SetStartingZ(complex(real(startingZ), z))
+	m.game.mandelbrot.SetStartingZ(complex(real(m.game.mandelbrot.GetStartingZ()), z))
+}
+
+func (m *UIManager) SetStartingCReal(c float64) {
+	m.game.mandelbrot.SetStartingC(complex(c, imag(m.game.mandelbrot.GetStartingC())))
+}
+
+func (m *UIManager) SetStartingCImag(c float64) {
+	m.game.mandelbrot.SetStartingC(complex(real(m.game.mandelbrot.GetStartingC()), c))
+}
+
+func (m *UIManager) IsJulia() bool {
+	return m.game.mandelbrot.IsJulia()
+}
+
+func (m *UIManager) SetJulia(julia bool) {
+	m.game.mandelbrot.SetJulia(julia)
 }

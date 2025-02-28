@@ -56,8 +56,8 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 
 	exponent := newToolbarButton(res, "Exponent")
 	var (
-		exponentInput = newToolbarNumberEntry(res,
-			"> 0",
+		exponentReal = newToolbarNumberEntry(res,
+			"Real",
 			func(newInputText string) (bool, *string) {
 				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
 					return false, nil
@@ -66,13 +66,26 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			},
 			func(args *widget.TextInputChangedEventArgs) {
 				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
-					manager.SetExponent(f)
+					manager.SetExponentReal(f)
+				}
+			})
+		exponentImag = newToolbarNumberEntry(res,
+			"Imag",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetExponentImag(f)
 				}
 			})
 	)
 	exponent.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			openToolbarMenu(args.Button.GetWidget(), ui, exponentInput)
+			openToolbarMenu(args.Button.GetWidget(), ui, exponentReal, exponentImag)
 		}),
 	)
 	root.AddChild(exponent)
@@ -112,6 +125,42 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 		}),
 	)
 	root.AddChild(z)
+
+	c := newToolbarButton(res, "c")
+	var (
+		cReal = newToolbarNumberEntry(res,
+			"Real",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetStartingCReal(f)
+				}
+			})
+		cImag = newToolbarNumberEntry(res,
+			"Imag",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetStartingCImag(f)
+				}
+			})
+	)
+	c.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			openToolbarMenu(args.Button.GetWidget(), ui, cReal, cImag)
+		}),
+	)
+	root.AddChild(c)
 
 	toolbar := &Toolbar{
 		container:    root,

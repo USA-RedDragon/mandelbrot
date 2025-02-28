@@ -8,7 +8,6 @@ import (
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Game struct {
@@ -75,7 +74,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.mandelbrot.Update()
 	screen.WritePixels(g.mandelbrot.Framebuffer)
 	g.ui.Draw(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("\n\nTPS: %.2f\nFPS: %.2f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

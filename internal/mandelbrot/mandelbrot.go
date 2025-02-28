@@ -13,6 +13,7 @@ type Mandelbrot struct {
 	scale         float64
 	center        complex128
 	exponent      complex128
+	startingZ     complex128
 }
 
 type MandelbrotPixel struct {
@@ -38,6 +39,7 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 		scale:         1,
 		center:        complex(0, 0),
 		exponent:      complex(2, 0),
+		startingZ:     complex(0, 0),
 	}
 }
 
@@ -47,6 +49,18 @@ func (m *Mandelbrot) GetFramebuffer() []byte {
 
 func (m *Mandelbrot) GetExponent() complex128 {
 	return m.exponent
+}
+
+func (m *Mandelbrot) GetStartingZ() complex128 {
+	return m.startingZ
+}
+
+func (m *Mandelbrot) SetStartingZ(startingZ complex128) {
+	if m.startingZ == startingZ {
+		return
+	}
+	m.startingZ = startingZ
+	m.needsUpdate = true
 }
 
 func (m *Mandelbrot) SetExponent(exponent complex128) {
@@ -143,7 +157,7 @@ func (m *Mandelbrot) Update() {
 			go func(x, y int) {
 				defer pixelWG.Done()
 				c := m.ScreenToViewport(x, y)
-				pixelChan <- m.mandelbrot(x, y, 0, m.exponent, c)
+				pixelChan <- m.mandelbrot(x, y, m.startingZ, m.exponent, c)
 			}(x, y)
 		}
 	}

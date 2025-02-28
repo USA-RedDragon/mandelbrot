@@ -56,11 +56,19 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 
 	exponent := newToolbarButton(res, "Exponent")
 	var (
-		exponentInput = newToolbarNumberEntry(res, func(args *widget.TextInputChangedEventArgs) {
-			if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
-				manager.SetExponent(f)
-			}
-		})
+		exponentInput = newToolbarNumberEntry(res,
+			"> 0",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetExponent(f)
+				}
+			})
 	)
 	exponent.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
@@ -68,6 +76,42 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 		}),
 	)
 	root.AddChild(exponent)
+
+	z := newToolbarButton(res, "Z")
+	var (
+		zReal = newToolbarNumberEntry(res,
+			"Real",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetStartingZReal(f)
+				}
+			})
+		zImag = newToolbarNumberEntry(res,
+			"Imag",
+			func(newInputText string) (bool, *string) {
+				if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
+					return false, nil
+				}
+				return true, &newInputText
+			},
+			func(args *widget.TextInputChangedEventArgs) {
+				if f, err := strconv.ParseFloat(args.InputText, 64); err == nil {
+					manager.SetStartingZImag(f)
+				}
+			})
+	)
+	z.Configure(
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			openToolbarMenu(args.Button.GetWidget(), ui, zReal, zImag)
+		}),
+	)
+	root.AddChild(z)
 
 	toolbar := &Toolbar{
 		container:    root,
@@ -99,7 +143,7 @@ func newToolbarButton(res *resources, label string) *widget.Button {
 	)
 }
 
-func newToolbarNumberEntry(res *resources, handler widget.TextInputChangedHandlerFunc) *widget.TextInput {
+func newToolbarNumberEntry(res *resources, placeholder string, validator widget.TextInputValidationFunc, handler widget.TextInputChangedHandlerFunc) *widget.TextInput {
 	face, _ := loadFont(20)
 	return widget.NewTextInput(
 		widget.TextInputOpts.WidgetOpts(),
@@ -113,12 +157,8 @@ func newToolbarNumberEntry(res *resources, handler widget.TextInputChangedHandle
 			DisabledCaret: color.NRGBA{R: 200, G: 200, B: 200, A: 255},
 		}),
 		widget.TextInputOpts.Face(face),
-		widget.TextInputOpts.Validation(func(newInputText string) (bool, *string) {
-			if _, err := strconv.ParseFloat(newInputText, 64); err != nil {
-				return false, nil
-			}
-			return true, &newInputText
-		}),
+		widget.TextInputOpts.Placeholder(placeholder),
+		widget.TextInputOpts.Validation(validator),
 		widget.TextInputOpts.SubmitHandler(handler),
 	)
 }

@@ -24,3 +24,13 @@ func (m *UIManager) Reset() {
 func (m *UIManager) SetExponent(exponent float64) {
 	m.game.mandelbrot.SetExponent(complex(exponent, 0))
 }
+
+func (m *UIManager) SetStartingZReal(z float64) {
+	startingZ := m.game.mandelbrot.GetStartingZ()
+	m.game.mandelbrot.SetStartingZ(complex(z, imag(startingZ)))
+}
+
+func (m *UIManager) SetStartingZImag(z float64) {
+	startingZ := m.game.mandelbrot.GetStartingZ()
+	m.game.mandelbrot.SetStartingZ(complex(real(startingZ), z))
+}

@@ -16,6 +16,7 @@ type Mandelbrot struct {
 	startingZ     complex128
 	startingC     complex128
 	julia         bool
+	palette       *Palette
 }
 
 type MandelbrotPixel struct {
@@ -44,6 +45,7 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 		startingZ:     complex(0, 0),
 		startingC:     complex(-0.63, 0.34),
 		julia:         false,
+		palette:       NewPalette(PaletteModeSimpleRainbow),
 	}
 }
 
@@ -235,7 +237,7 @@ func (m *Mandelbrot) mandelbrot(x, y int, z complex128, exponent complex128, c c
 		return brot
 	}
 
-	brot.Color = m.color(n)
+	brot.Color = m.palette.Color(n, m.maxIterations)
 	return brot
 }
 

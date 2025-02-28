@@ -146,11 +146,6 @@ func (m *Mandelbrot) mandelbrot(x, y int, z complex128, exponent complex128, c c
 	return brot
 }
 
-func (m *Mandelbrot) color(n int64) [4]byte {
-	color := uint8(255 - (n * 255 / m.maxIterations))
-	return [4]byte{color, color, color, 255}
-}
-
 func (m *Mandelbrot) Relayout(width, height int) {
 	if m.width == width && m.height == height {
 		return

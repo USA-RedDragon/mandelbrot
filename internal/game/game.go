@@ -72,7 +72,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.mandelbrot.Update()
-	screen.WritePixels(g.mandelbrot.Framebuffer)
+	screen.WritePixels(g.mandelbrot.GetFramebuffer())
 	g.ui.Draw(screen)
 }
 

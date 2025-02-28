@@ -7,7 +7,7 @@ import (
 
 type Mandelbrot struct {
 	width, height int
-	Framebuffer   []byte
+	framebuffer   []byte
 	maxIterations int64
 	needsUpdate   bool
 	scale         float64
@@ -32,13 +32,17 @@ func NewMandelbrot(width, height int) *Mandelbrot {
 	return &Mandelbrot{
 		width:         width,
 		height:        height,
-		Framebuffer:   make([]byte, width*height*4),
+		framebuffer:   make([]byte, width*height*4),
 		maxIterations: 1000,
 		needsUpdate:   true,
 		scale:         1,
 		center:        complex(0, 0),
 		exponent:      complex(2, 0),
 	}
+}
+
+func (m *Mandelbrot) GetFramebuffer() []byte {
+	return m.framebuffer
 }
 
 func (m *Mandelbrot) GetExponent() complex128 {
@@ -123,7 +127,7 @@ func (m *Mandelbrot) Update() {
 		count := 0
 		for pixel := range pixelChan {
 			i := (pixel.Y*m.width + pixel.X) * 4
-			copy(m.Framebuffer[i:i+4], pixel.Color[:])
+			copy(m.framebuffer[i:i+4], pixel.Color[:])
 			count++
 			if count == m.width*m.height {
 				close(pixelChan)
@@ -171,6 +175,6 @@ func (m *Mandelbrot) Relayout(width, height int) {
 	}
 	m.width = width
 	m.height = height
-	m.Framebuffer = make([]byte, width*height*4)
+	m.framebuffer = make([]byte, width*height*4)
 	m.needsUpdate = true
 }

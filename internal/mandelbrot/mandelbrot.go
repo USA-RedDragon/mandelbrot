@@ -17,6 +17,19 @@ type Mandelbrot struct {
 	startingC     complex128
 	julia         bool
 	palette       *Palette
+	initial       Settings
+}
+
+// Settings is the starting state of the fractal. Reset returns to it.
+type Settings struct {
+	MaxIterations uint64
+	Scale         float64
+	Center        complex128
+	Exponent      complex128
+	StartingZ     complex128
+	StartingC     complex128
+	Julia         bool
+	Palette       PaletteMode
 }
 
 type MandelbrotPixel struct {
@@ -32,21 +45,17 @@ const (
 	boundMaxY = 1
 )
 
-func NewMandelbrot(width, height int) *Mandelbrot {
-	return &Mandelbrot{
-		width:         width,
-		height:        height,
-		framebuffer:   make([]byte, width*height*4),
-		maxIterations: 1000,
-		needsUpdate:   true,
-		scale:         1,
-		center:        complex(0, 0),
-		exponent:      complex(2, 0),
-		startingZ:     complex(0, 0),
-		startingC:     complex(-0.63, 0.34),
-		julia:         false,
-		palette:       NewPalette(PaletteModeSimpleRainbow),
+// NewMandelbrot creates a fractal of the given size that starts from s.
+func NewMandelbrot(width, height int, s Settings) *Mandelbrot {
+	m := &Mandelbrot{
+		width:       width,
+		height:      height,
+		framebuffer: make([]byte, width*height*4),
+		palette:     NewPalette(s.Palette),
+		initial:     s,
 	}
+	m.Reset()
+	return m
 }
 
 func (m *Mandelbrot) GetFramebuffer() []byte {
@@ -73,14 +82,15 @@ func (m *Mandelbrot) SetMaxIterations(max uint64) {
 	m.needsUpdate = true
 }
 
+// Reset returns to the starting settings.
 func (m *Mandelbrot) Reset() {
-	m.scale = 1
-	m.center = complex(0, 0)
-	m.exponent = complex(2, 0)
-	m.startingZ = complex(0, 0)
-	m.startingC = complex(-0.63, 0.34)
-	m.maxIterations = 1000
-	m.julia = false
+	m.scale = m.initial.Scale
+	m.center = m.initial.Center
+	m.exponent = m.initial.Exponent
+	m.startingZ = m.initial.StartingZ
+	m.startingC = m.initial.StartingC
+	m.maxIterations = m.initial.MaxIterations
+	m.julia = m.initial.Julia
 	m.needsUpdate = true
 }
 

@@ -164,6 +164,7 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	var (
 		julia = newToolbarMenuEntryCheckbox(res,
 			"Julia",
+			manager.IsJulia(),
 			func(args *widget.CheckboxChangedEventArgs) {
 				if args.State == widget.WidgetChecked {
 					manager.SetJulia(true)
@@ -213,7 +214,12 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	ui.Container.AddChild(toolbar.container)
 }
 
-func newToolbarMenuEntryCheckbox(res *resources, label string, handler widget.CheckboxChangedHandlerFunc) *widget.LabeledCheckbox {
+func newToolbarMenuEntryCheckbox(res *resources, label string, checked bool, handler widget.CheckboxChangedHandlerFunc) *widget.LabeledCheckbox {
+	state := widget.WidgetUnchecked
+	if checked {
+		state = widget.WidgetChecked
+	}
+
 	uncheckedImage := ebiten.NewImage(15, 15)
 	uncheckedImage.Fill(color.White)
 
@@ -245,6 +251,7 @@ func newToolbarMenuEntryCheckbox(res *resources, label string, handler widget.Ch
 					Idle: checkedImage,
 				},
 			}),
+			widget.CheckboxOpts.InitialState(state),
 			widget.CheckboxOpts.StateChangedHandler(handler),
 		),
 		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.font, &widget.LabelColor{

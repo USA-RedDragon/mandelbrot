@@ -18,7 +18,7 @@ type Game struct {
 	exit       bool
 }
 
-func NewGame(width, height uint) (*Game, error) {
+func NewGame(width, height uint, settings mandelbrot.Settings) (*Game, error) {
 	ebiten.SetWindowSize(int(width), int(height))
 	ebiten.SetWindowTitle("Fractal Explorer")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
@@ -36,7 +36,7 @@ func NewGame(width, height uint) (*Game, error) {
 	}
 
 	game := &Game{
-		mandelbrot: mandelbrot.NewMandelbrot(int(width), int(height)),
+		mandelbrot: mandelbrot.NewMandelbrot(int(width), int(height), settings),
 		width:      width,
 		height:     height,
 		ui:         eui,

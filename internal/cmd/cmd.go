@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/mandelbrot/internal/config"
 	"github.com/USA-RedDragon/mandelbrot/internal/game"
+	"github.com/USA-RedDragon/mandelbrot/internal/mandelbrot"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/spf13/cobra"
 )
@@ -18,22 +19,21 @@ func NewCommand(version, commit string) *cobra.Command {
 			"version": version,
 			"commit":  commit,
 		},
-		RunE:          run,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	config.RegisterFlags(cmd)
+	loader := config.New(cmd.Flags())
+	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		cfg, err := loader.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+		return run(cmd, cfg)
+	}
 	return cmd
 }
 
-func run(cmd *cobra.Command, _ []string) error {
-	slog.Info("mandelbrot", "version", cmd.Annotations["version"], "commit", cmd.Annotations["commit"])
-
-	cfg, err := config.LoadConfig(cmd)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
-
+func run(cmd *cobra.Command, cfg *config.Config) error {
 	switch cfg.LogLevel {
 	case config.LogLevelDebug:
 		slog.SetLogLoggerLevel(slog.LevelDebug)
@@ -45,12 +45,23 @@ func run(cmd *cobra.Command, _ []string) error {
 		slog.SetLogLoggerLevel(slog.LevelError)
 	}
 
-	err = cfg.Validate()
-	if err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
+	slog.Info("mandelbrot", "version", cmd.Annotations["version"], "commit", cmd.Annotations["commit"])
+
+	palette := mandelbrot.PaletteModeSimpleRainbow
+	if cfg.Palette == config.PaletteGrayscale {
+		palette = mandelbrot.PaletteModeSimpleGrayscale
 	}
 
-	game, err := game.NewGame(cfg.Width, cfg.Height)
+	game, err := game.NewGame(cfg.Width, cfg.Height, mandelbrot.Settings{
+		MaxIterations: cfg.MaxIterations,
+		Scale:         cfg.Scale,
+		Center:        cfg.Center,
+		Exponent:      cfg.Exponent,
+		StartingZ:     cfg.Z,
+		StartingC:     cfg.C,
+		Julia:         cfg.Julia,
+		Palette:       palette,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create game: %w", err)
 	}

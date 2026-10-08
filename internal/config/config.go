@@ -1,25 +1,41 @@
+// Package config loads the mandelbrot settings from defaults, a config file,
+// environment variables and command-line flags.
 package config
 
-import (
-	"context"
-	"fmt"
-	"os"
-	"strings"
+//go:generate go tool configulator -type Config
+//go:generate go tool configulator -type Config -markdown -markdown-file ../../README.md -env-prefix ""
+//go:generate go tool configulator -type Config -sample -sample-file ../../config.example.yaml
 
-	"github.com/go-errors/errors"
-	"github.com/spf13/cobra"
+import (
+	"errors"
+	"math"
+	"math/cmplx"
+
+	configulator "github.com/USA-RedDragon/configulator/v2"
+	cpflag "github.com/USA-RedDragon/configulator/v2/flags/pflag"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
 )
 
+// Config is the mandelbrot configuration.
 type Config struct {
-	LogLevel LogLevel `json:"log-level" yaml:"log-level"`
-	Width    uint     `json:"width" yaml:"width"`
-	Height   uint     `json:"height" yaml:"height"`
+	LogLevel      LogLevel   `name:"log-level" default:"info" description:"log level: debug, info, warn or error"`
+	Width         uint       `name:"width" default:"720" description:"initial window width"`
+	Height        uint       `name:"height" default:"480" description:"initial window height"`
+	MaxIterations uint64     `name:"max-iterations" default:"1000" description:"maximum iterations per point"`
+	Scale         float64    `name:"scale" default:"1" description:"initial zoom scale, smaller zooms in"`
+	Center        complex128 `name:"center" default:"0" description:"initial view center"`
+	Exponent      complex128 `name:"exponent" default:"2" description:"exponent in z = z^exponent + c"`
+	Z             complex128 `name:"z" default:"0" description:"starting z for the Mandelbrot set"`
+	C             complex128 `name:"c" default:"(-0.63+0.34i)" description:"c for the Julia set"`
+	Julia         bool       `name:"julia" default:"false" description:"start in Julia set mode"`
+	Palette       Palette    `name:"palette" default:"rainbow" description:"color palette: rainbow or grayscale"`
 }
 
+// LogLevel is the minimum level of log messages to show.
 type LogLevel string
 
+// Log levels.
 const (
 	LogLevelDebug LogLevel = "debug"
 	LogLevelInfo  LogLevel = "info"
@@ -27,35 +43,35 @@ const (
 	LogLevelError LogLevel = "error"
 )
 
-//nolint:golint,gochecknoglobals
-var (
-	ConfigFileKey = "config"
-	LogLevelKey   = "log-level"
-	WidthKey      = "width"
-	HeightKey     = "height"
-)
+// Palette is the color palette used to draw points outside the set.
+type Palette string
 
+// Palettes.
 const (
-	DefaultConfigPath = "config.yaml"
-	DefaultLogLevel   = LogLevelInfo
-	DefaultWidth      = 720
-	DefaultHeight     = 480
+	PaletteRainbow   Palette = "rainbow"
+	PaletteGrayscale Palette = "grayscale"
 )
 
-func RegisterFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP(ConfigFileKey, "c", DefaultConfigPath, "Config file path")
-	cmd.Flags().String(LogLevelKey, string(DefaultLogLevel), "Log level")
-	cmd.Flags().Uint(WidthKey, DefaultWidth, "Initial window width")
-	cmd.Flags().Uint(HeightKey, DefaultHeight, "Initial window height")
-}
+// DefaultConfigPath is the config file read when --config is not given. It
+// may be missing.
+const DefaultConfigPath = "config.yaml"
 
+// Validation errors.
 var (
-	ErrInvalidLogLevel = errors.New("Invalid log level")
-	ErrInvalidWidth    = errors.New("Invalid width")
-	ErrInvalidHeight   = errors.New("Invalid height")
+	ErrInvalidLogLevel      = errors.New("invalid log level")
+	ErrInvalidWidth         = errors.New("invalid width")
+	ErrInvalidHeight        = errors.New("invalid height")
+	ErrInvalidMaxIterations = errors.New("max-iterations must be greater than 0")
+	ErrInvalidScale         = errors.New("scale must be a finite number greater than 0")
+	ErrInvalidCenter        = errors.New("center must be finite")
+	ErrInvalidExponent      = errors.New("exponent must be finite")
+	ErrInvalidZ             = errors.New("z must be finite")
+	ErrInvalidC             = errors.New("c must be finite")
+	ErrInvalidPalette       = errors.New("invalid palette")
 )
 
-func (c *Config) Validate() error {
+// Validate checks the loaded config. Load calls it after every layer.
+func (c Config) Validate() error {
 	switch c.LogLevel {
 	case LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError:
 	default:
@@ -70,90 +86,49 @@ func (c *Config) Validate() error {
 		return ErrInvalidHeight
 	}
 
+	if c.MaxIterations == 0 {
+		return ErrInvalidMaxIterations
+	}
+
+	if math.IsNaN(c.Scale) || math.IsInf(c.Scale, 0) || c.Scale <= 0 {
+		return ErrInvalidScale
+	}
+
+	for _, v := range []struct {
+		value complex128
+		err   error
+	}{
+		{c.Center, ErrInvalidCenter},
+		{c.Exponent, ErrInvalidExponent},
+		{c.Z, ErrInvalidZ},
+		{c.C, ErrInvalidC},
+	} {
+		if cmplx.IsNaN(v.value) || cmplx.IsInf(v.value) {
+			return v.err
+		}
+	}
+
+	switch c.Palette {
+	case PaletteRainbow, PaletteGrayscale:
+	default:
+		return ErrInvalidPalette
+	}
+
 	return nil
 }
 
-func LoadConfig(cmd *cobra.Command) (*Config, error) {
-	var config Config
-
-	// Load flags from envs
-	ctx, cancel := context.WithCancelCause(cmd.Context())
-	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		if ctx.Err() != nil {
-			return
-		}
-		optName := strings.ReplaceAll(strings.ReplaceAll(strings.ToUpper(f.Name), "-", "_"), ".", "__")
-		if val, ok := os.LookupEnv(optName); !f.Changed && ok {
-			if err := f.Value.Set(val); err != nil {
-				cancel(err)
-			}
-			f.Changed = true
-		}
-	})
-	if ctx.Err() != nil {
-		return &config, fmt.Errorf("failed to load env: %w", context.Cause(ctx))
-	}
-
-	configPath, err := cmd.Flags().GetString("config")
-	if err != nil {
-		return &config, fmt.Errorf("failed to get config path: %w", err)
-	}
-	if configPath != "" {
-		data, err := os.ReadFile(configPath)
-		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return &config, fmt.Errorf("failed to read config: %w", err)
-		} else if err == nil {
-			if err := yaml.Unmarshal(data, &config); err != nil {
-				return &config, fmt.Errorf("failed to unmarshal config: %w", err)
-			}
-		}
-	}
-
-	err = overrideFlags(&config, cmd)
-	if err != nil {
-		return &config, fmt.Errorf("failed to override flags: %w", err)
-	}
-
-	// Defaults
-	if config.LogLevel == "" {
-		config.LogLevel = DefaultLogLevel
-	}
-
-	if config.Width == 0 {
-		config.Width = DefaultWidth
-	}
-
-	if config.Height == 0 {
-		config.Height = DefaultHeight
-	}
-
-	return &config, nil
-}
-
-func overrideFlags(config *Config, cmd *cobra.Command) error {
-	if cmd.Flags().Changed(LogLevelKey) {
-		ll, err := cmd.Flags().GetString(LogLevelKey)
-		if err != nil {
-			return fmt.Errorf("failed to get log level: %w", err)
-		}
-		config.LogLevel = LogLevel(ll)
-	}
-
-	if cmd.Flags().Changed(WidthKey) {
-		w, err := cmd.Flags().GetUint(WidthKey)
-		if err != nil {
-			return fmt.Errorf("failed to get width: %w", err)
-		}
-		config.Width = w
-	}
-
-	if cmd.Flags().Changed(HeightKey) {
-		h, err := cmd.Flags().GetUint(HeightKey)
-		if err != nil {
-			return fmt.Errorf("failed to get height: %w", err)
-		}
-		config.Height = h
-	}
-
-	return nil
+// New builds a loader that reads env vars with no prefix (LOG_LEVEL), the
+// YAML file named by -c/--config (config.yaml by default) and the flags in
+// fs, which it registers right away.
+func New(fs *pflag.FlagSet) *configulator.Configulator[Config] {
+	c := configulator.New(ConfigSchema()).
+		WithEnvironmentVariables(&configulator.EnvironmentVariableOptions{Prefix: "", Separator: "_"}).
+		WithFile(&configulator.FileOptions{
+			Search: []string{DefaultConfigPath},
+			Decoders: configulator.Decoders{
+				".yaml": yaml.Unmarshal,
+				".yml":  yaml.Unmarshal,
+			},
+		})
+	return cpflag.Bind(c, fs, ConfigPFlagHooks(), nil)
 }

@@ -166,24 +166,14 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 			"Julia",
 			manager.IsJulia(),
 			func(args *widget.CheckboxChangedEventArgs) {
-				if args.State == widget.WidgetChecked {
-					manager.SetJulia(true)
-					z.GetWidget().Disabled = true
-					c.GetWidget().Disabled = false
-				} else {
-					manager.SetJulia(false)
-					z.GetWidget().Disabled = false
-					c.GetWidget().Disabled = true
-				}
+				on := args.State == widget.WidgetChecked
+				manager.SetJulia(on)
+				showJulia(z, c, on)
 			})
 		reset = newToolbarMenuEntry(res, "Reset")
 		quit  = newToolbarMenuEntry(res, "Quit")
 	)
-	if manager.IsJulia() {
-		z.GetWidget().Disabled = true
-	} else {
-		c.GetWidget().Disabled = true
-	}
+	showJulia(z, c, manager.IsJulia())
 	explorer.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			openToolbarMenu(args.Button.GetWidget(), ui, julia, reset, quit)
@@ -197,6 +187,12 @@ func CreateToolbar(manager Manager, ui *ebitenui.UI, res *resources) {
 	reset.Configure(
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			manager.Reset()
+			state := widget.WidgetUnchecked
+			if manager.IsJulia() {
+				state = widget.WidgetChecked
+			}
+			julia.SetState(state)
+			showJulia(z, c, manager.IsJulia())
 		}),
 	)
 
@@ -365,4 +361,10 @@ func openToolbarMenu(opener *widget.Widget, ui *ebitenui.UI, entries ...widget.P
 	)
 
 	ui.AddWindow(window)
+}
+
+// showJulia enables the c button in Julia mode and the z button otherwise.
+func showJulia(z, c *widget.Button, julia bool) {
+	z.GetWidget().Disabled = julia
+	c.GetWidget().Disabled = !julia
 }

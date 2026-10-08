@@ -1,0 +1,23 @@
+# Sample configuration
+# log level: debug, info, warn or error
+log-level: "info"
+# initial window width
+width: 720
+# initial window height
+height: 480
+# maximum iterations per point
+max-iterations: 1000
+# initial zoom scale, smaller zooms in
+scale: 1
+# initial view center
+center: "0"
+# exponent in z = z^exponent + c
+exponent: "2"
+# starting z for the Mandelbrot set
+z: "0"
+# c for the Julia set
+c: "(-0.63+0.34i)"
+# start in Julia set mode
+julia: false
+# color palette: rainbow or grayscale
+palette: "rainbow"

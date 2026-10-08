@@ -118,11 +118,10 @@ func (m *Mandelbrot) SetExponent(exponent complex128) {
 	m.needsUpdate = true
 }
 
+// ScaleBy zooms by factor. It never zooms out past the full set or the
+// configured starting scale, whichever is wider.
 func (m *Mandelbrot) ScaleBy(factor float64) {
-	newscale := m.scale * factor
-	if newscale > 1 {
-		newscale = 1
-	}
+	newscale := min(m.scale*factor, max(1, m.initial.Scale))
 	if newscale == m.scale {
 		return
 	}
